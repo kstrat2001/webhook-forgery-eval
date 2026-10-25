@@ -17,7 +17,7 @@
         "scope": {
           "asks": [
             "Do not modify source code under src/. Tests only.",
-            "- Add your tests in a new file under test/. Do not change the existing test files at all, not even their imports.",
+            "Add your tests in a new file under test/. Do not change the existing test files at all, not even their imports.",
             "(a guard on the suite itself; leave it alone)"
           ],
           "may_add": [
