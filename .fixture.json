@@ -1,0 +1,26 @@
+{
+  "name": "webhook-forgery-eval",
+  "version": "1.0",
+  "satisfies": "node-webhook-forgery-js@1.0",
+  "language": "nodejs",
+  "verify_command": "npm test",
+  "baseline": {
+    "test_count": 11,
+    "service_test_files": [
+      "test/webhooks.test.js",
+      "test/portability.test.js"
+    ]
+  },
+  "required_files": [
+    "src/config.js",
+    "src/ledger.js",
+    "src/signature.js",
+    "src/webhooks.js",
+    "test/webhooks.test.js",
+    "test/portability.test.js",
+    "package.json",
+    "eval/workloads/webhook-forgery.json"
+  ],
+  "schema_version": "1.1",
+  "eval_dir": "eval"
+}

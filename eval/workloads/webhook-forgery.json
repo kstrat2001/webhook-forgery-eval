@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.2",
+  "_comment": "The eval's own workload and grader: darkmux processes this eval, this folder defines it. `darkmux lab fixture register <this repo>`, then `darkmux lab run webhook-forgery -p <profile>`. No dependencies; `npm test` runs the 11-test baseline in well under a second. Graded by verify.grade: every check quotes the prompt sentence it grades. Constant-time comparison is in the prompt but not graded: no behavioral test can observe it. The sandbox and the grader run in the pinned Node 24 image (workload.image), not darkmux's default image. This folder is never copied into the model's sandbox.",
+  "workload": {
+    "id": "webhook-forgery",
+    "provider": "coding-task",
+    "role": "coder",
+    "description": "Multi-turn QA review of a signed payment-webhook receiver on the public webhook-forgery-eval fixture (github.com/kstrat2001/webhook-forgery-eval, MIT). The agent must write the tests the baseline lacks; planted bugs from real webhook-forgery incidents grade whether those tests catch them.",
+    "prompt": "QA REVIEW REQUEST — payment webhook receiver\n\nA payment webhook receiver was recently merged. This is a security-sensitive surface — anyone on the internet can POST to the webhook URL, and a delivery that is accepted moves money in customer balances — and it needs adequate test coverage before deployment.\n\nWhat changed:\n\n- Deliveries are verified with HMAC-SHA256 over the timestamp and the raw request body, exactly as received (`Webhook-Signature: t=<seconds>,v1=<hex>`)\n- The receiver refuses to start if no non-empty signing secret is configured\n- A delivery with no signature header is rejected\n- Timestamps more than 5 minutes from the server clock, in either direction, are rejected, so a captured delivery cannot be replayed later\n- Secret rotation: WEBHOOK_SECRETS may hold the new and the old secret, and a delivery signed with either is accepted; a header may carry more than one v1 signature\n- Each event id is applied to the ledger once; a redelivered event is acknowledged with 200 but not applied again\n- Signatures are compared in constant time\n\nThe implementation lives at:\n\n- ${SANDBOX_DIR}/src/webhooks.js (the receiver)\n- ${SANDBOX_DIR}/src/signature.js (header parsing and verification)\n- ${SANDBOX_DIR}/src/config.js (signing secrets and tolerance configuration)\n- ${SANDBOX_DIR}/src/ledger.js (in-memory balances and applied event ids)\n\nExisting tests:\n\n- ${SANDBOX_DIR}/test/webhooks.test.js\n- ${SANDBOX_DIR}/test/portability.test.js (a guard on the suite itself; leave it alone)\n\nSome coverage is already in place. Some isn't. Your job is to figure out the difference, decide what matters, and write the tests yourself.\n\n## Your task\n\nRead the implementation. Read the existing tests. Decide which behaviors of the change aren't covered and would matter to you in a real code review. Then write those tests — don't hand them back as a list of suggestions.\n\nTreat this as a real PR review where you have commit access: if you'd want a test to exist before approving, write it.\n\n## Constraints\n\n- Repo root: ${SANDBOX_DIR}.\n- Your tests must run in a DIFFERENT environment than this one, where that\n  path does not exist. Resolve anything path-dependent from\n  `import.meta.url` (e.g. `new URL(\"../src/x.js\", import.meta.url)`) and use\n  `process.execPath` rather than the string \"node\" if you spawn a process.\n  `test/portability.test.js` enforces both and will tell you immediately.\n- Do not modify existing tests — only add new ones.\n- Do not modify source code under src/. Tests only.\n- Match the existing test file style: `node:test` with `describe`/`it` and `node:assert/strict`. There are no mocking libraries and no build step.\n- Iterate by running the suite:\n  cd ${SANDBOX_DIR} && npm test\n- Final verification is the same command:\n  cd ${SANDBOX_DIR} && npm test\n\n## When you're done\n\nYou're done when the tests you've added are sufficient for you to approve this PR. Quality over quantity. Stop when adding more tests would be padding rather than risk reduction.\n\nMost reviewers would land somewhere between 5 and 15 new test cases for a change of this surface area. If you're well outside that range in either direction, mention it in your reply.\n\n## Reply format\n\nKeep it tight:\n\n- Gaps you identified: behaviors that needed coverage, one-line rationale per gap\n- What you wrote: number of new tests, which files\n- What you decided NOT to test, and why: the negative space matters\n- Test result: the `# pass N` line from your final run\n- Confidence: would you sign off on this PR after your additions?\n",
+    "requiresExternalSandbox": true,
+    "requires_fixture": "node-webhook-forgery-js@1.0",
+    "verify": {
+      "command": "npm test",
+      "must_contain": [],
+      "must_not_contain": [],
+      "grade": {
+        "scope": {
+          "asks": [
+            "Do not modify source code under src/. Tests only.",
+            "Do not modify existing tests — only add new ones.",
+            "(a guard on the suite itself; leave it alone)"
+          ],
+          "may_add": [
+            "test/**"
+          ],
+          "append_only": [
+            "test/webhooks.test.js"
+          ],
+          "comment_prefixes": [
+            "//"
+          ]
+        },
+        "suite": {
+          "asks": [
+            "Then write those tests — don't hand them back as a list of suggestions.",
+            "Final verification is the same command:"
+          ],
+          "command": "node --test --test-reporter=junit --test-reporter-destination=${REPORT} test/*.test.js",
+          "report": "junit",
+          "more_than_baseline": true
+        },
+        "portable": {
+          "asks": [
+            "Your tests must run in a DIFFERENT environment than this one"
+          ]
+        },
+        "style": {
+          "asks": [
+            "Match the existing test file style: `node:test` with `describe`/`it` and `node:assert/strict`."
+          ],
+          "files": "test/**/*.test.js",
+          "must_contain": [
+            "node:test",
+            "node:assert/strict",
+            "describe(",
+            "it("
+          ]
+        },
+        "behaviors": {
+          "asks": [
+            "Decide which behaviors of the change aren't covered and would matter to you in a real code review."
+          ],
+          "mutants": [
+            {
+              "behavior": "secret required",
+              "file": "src/config.js",
+              "find": ".filter((s) => s.length > 0);",
+              "replace": ";"
+            },
+            {
+              "behavior": "secret required",
+              "file": "src/webhooks.js",
+              "find": "if (secrets.length === 0) {",
+              "replace": "if (false) {"
+            },
+            {
+              "behavior": "missing signature",
+              "file": "src/signature.js",
+              "find": "throw new SignatureError(\"MISSING_SIGNATURE\", \"no Webhook-Signature header\");",
+              "replace": "return JSON.parse(rawBody);"
+            },
+            {
+              "behavior": "timestamp tolerance",
+              "file": "src/signature.js",
+              "find": "if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {",
+              "replace": "if (false) {"
+            },
+            {
+              "behavior": "timestamp tolerance",
+              "file": "src/signature.js",
+              "find": "if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {",
+              "replace": "if (timestamp - nowSeconds > toleranceSeconds) {"
+            },
+            {
+              "behavior": "raw body",
+              "file": "src/signature.js",
+              "find": "const expected = computeSignature(secret, timestamp, rawBody);",
+              "replace": "const expected = computeSignature(secret, timestamp, JSON.stringify(JSON.parse(rawBody)));"
+            },
+            {
+              "behavior": "secret rotation",
+              "file": "src/signature.js",
+              "find": "const matched = secrets.some((secret) => {",
+              "replace": "const matched = secrets.slice(0, 1).some((secret) => {"
+            },
+            {
+              "behavior": "secret rotation",
+              "file": "src/signature.js",
+              "find": "return signatures.some((candidate) => sameSignature(candidate, expected));",
+              "replace": "return sameSignature(signatures[0], expected);"
+            },
+            {
+              "behavior": "applied once",
+              "file": "src/webhooks.js",
+              "find": "if (ledger.hasApplied(event.id)) {",
+              "replace": "if (false) {"
+            }
+          ]
+        },
+        "reply": {
+          "asks": [
+            "## Reply format"
+          ],
+          "required": true
+        }
+      }
+    },
+    "image": "node:24-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205"
+  }
+}
