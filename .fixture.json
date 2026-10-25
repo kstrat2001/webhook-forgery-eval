@@ -1,6 +1,6 @@
 {
   "name": "webhook-forgery-eval",
-  "version": "1.0",
+  "version": "1.1",
   "satisfies": "node-webhook-forgery-js@1.0",
   "language": "nodejs",
   "verify_command": "npm test",

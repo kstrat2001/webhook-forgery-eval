@@ -40,7 +40,7 @@ Treat this as a real PR review where you have commit access: if you'd want a tes
   `import.meta.url` (e.g. `new URL("../src/x.js", import.meta.url)`) and use
   `process.execPath` rather than the string "node" if you spawn a process.
   `test/portability.test.js` enforces both and will tell you immediately.
-- Do not modify existing tests — only add new ones.
+- Add your tests in a new file under test/. Do not change the existing test files at all, not even their imports.
 - Do not modify source code under src/. Tests only.
 - Match the existing test file style: `node:test` with `describe`/`it` and `node:assert/strict`. There are no mocking libraries and no build step.
 - Iterate by running the suite:
