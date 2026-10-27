@@ -59,55 +59,64 @@
               "behavior": "secret required",
               "file": "src/config.js",
               "find": ".filter((s) => s.length > 0);",
-              "replace": ";"
+              "replace": ";",
+              "criterion": "secret-required"
             },
             {
               "behavior": "secret required",
               "file": "src/webhooks.js",
               "find": "if (secrets.length === 0) {",
-              "replace": "if (false) {"
+              "replace": "if (false) {",
+              "criterion": "secret-required"
             },
             {
               "behavior": "missing signature",
               "file": "src/signature.js",
               "find": "throw new SignatureError(\"MISSING_SIGNATURE\", \"no Webhook-Signature header\");",
-              "replace": "return JSON.parse(rawBody);"
+              "replace": "return JSON.parse(rawBody);",
+              "criterion": "missing-signature"
             },
             {
               "behavior": "timestamp tolerance",
               "file": "src/signature.js",
               "find": "if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {",
-              "replace": "if (false) {"
+              "replace": "if (false) {",
+              "criterion": "timestamp-tolerance"
             },
             {
               "behavior": "timestamp tolerance",
               "file": "src/signature.js",
               "find": "if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {",
-              "replace": "if (timestamp - nowSeconds > toleranceSeconds) {"
+              "replace": "if (timestamp - nowSeconds > toleranceSeconds) {",
+              "criterion": "timestamp-tolerance"
             },
             {
               "behavior": "raw body",
               "file": "src/signature.js",
               "find": "const expected = computeSignature(secret, timestamp, rawBody);",
-              "replace": "const expected = computeSignature(secret, timestamp, JSON.stringify(JSON.parse(rawBody)));"
+              "replace": "const expected = computeSignature(secret, timestamp, JSON.stringify(JSON.parse(rawBody)));",
+              "criterion": "raw-body"
             },
             {
               "behavior": "secret rotation",
               "file": "src/signature.js",
               "find": "const matched = secrets.some((secret) => {",
-              "replace": "const matched = secrets.slice(0, 1).some((secret) => {"
+              "replace": "const matched = secrets.slice(0, 1).some((secret) => {",
+              "criterion": "secret-rotation"
             },
             {
               "behavior": "secret rotation",
               "file": "src/signature.js",
               "find": "return signatures.some((candidate) => sameSignature(candidate, expected));",
-              "replace": "return sameSignature(signatures[0], expected);"
+              "replace": "return sameSignature(signatures[0], expected);",
+              "criterion": "secret-rotation"
             },
             {
               "behavior": "applied once",
               "file": "src/webhooks.js",
               "find": "if (ledger.hasApplied(event.id)) {",
-              "replace": "if (false) {"
+              "replace": "if (false) {",
+              "criterion": "applied-once"
             }
           ]
         },
@@ -116,7 +125,63 @@
             "## Reply format"
           ],
           "required": true
-        }
+        },
+        "criteria": [
+          {
+            "id": "secret-required",
+            "name": "Secret required",
+            "description": "The receiver refuses to start without a non-empty signing secret.",
+            "source": {
+              "path": "src/webhooks.js",
+              "anchor": "if (secrets.length === 0) {"
+            }
+          },
+          {
+            "id": "missing-signature",
+            "name": "Missing signature",
+            "description": "A delivery with no Webhook-Signature header is rejected.",
+            "source": {
+              "path": "src/signature.js",
+              "anchor": "throw new SignatureError(\"MISSING_SIGNATURE\", \"no Webhook-Signature header\");"
+            }
+          },
+          {
+            "id": "timestamp-tolerance",
+            "name": "Timestamp tolerance",
+            "description": "A delivery more than 5 minutes from the server clock, in either direction, is rejected.",
+            "source": {
+              "path": "src/signature.js",
+              "anchor": "if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {"
+            }
+          },
+          {
+            "id": "raw-body",
+            "name": "Raw body",
+            "description": "The signature is checked over the raw request body exactly as received.",
+            "source": {
+              "path": "src/signature.js",
+              "anchor": "const expected = computeSignature(secret, timestamp, rawBody);"
+            }
+          },
+          {
+            "id": "secret-rotation",
+            "name": "Secret rotation",
+            "description": "A delivery signed with the new or the old secret is accepted, and any of several v1 signatures may match.",
+            "source": {
+              "path": "src/signature.js",
+              "anchor": "const matched = secrets.some((secret) => {"
+            }
+          },
+          {
+            "id": "applied-once",
+            "name": "Applied once",
+            "description": "A redelivered event is acknowledged but not applied to the ledger again.",
+            "source": {
+              "path": "src/webhooks.js",
+              "anchor": "if (ledger.hasApplied(event.id)) {"
+            }
+          }
+        ]
       }
     },
     "image": "node:24-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205"
