@@ -6,6 +6,21 @@ webhooks. The subject is a payment webhook receiver that checks a signature
 before it moves money: small enough to read in one sitting, and easy to cover
 with tests that look complete while missing every attack.
 
+## At a glance
+
+| | |
+| --- | --- |
+| Kind | Coding with tools: the model edits and runs a sandboxed copy of this repo, without `eval/` |
+| Version | 1.3 (tag `1.3`, commit `ddc2805`) |
+| Criteria | 6, each recorded as met or missed on every run |
+| Results | [evals.darkmux.com/evals/webhook-forgery-eval](https://evals.darkmux.com/evals/webhook-forgery-eval) |
+| Needs | darkmux 5.9.0 or later |
+| License | MIT |
+
+The eval's page on evals.darkmux.com names the approved commit, lists the
+criteria and shows which ones each run met. The criteria are not listed here
+because this file is inside the model's sandbox.
+
 ## What the code does
 
 - Every delivery carries `Webhook-Signature: t=<seconds>,v1=<hex>`. Each `v1`
@@ -52,21 +67,6 @@ npm test          # 11 passing, no install step, no dependencies
 
 Node 18 or newer. The suite uses Node's built-in test runner.
 
-## At a glance
-
-| | |
-| --- | --- |
-| Kind | Coding with tools: the model edits and runs a sandboxed copy of this repo, without `eval/` |
-| Version | 1.3 (tag `1.3`, commit `ddc2805`) |
-| Criteria | 6, each recorded as met or missed on every run |
-| Results | [evals.darkmux.com/evals/webhook-forgery-eval](https://evals.darkmux.com/evals/webhook-forgery-eval) |
-| Needs | darkmux 5.9.0 or later |
-| License | MIT |
-
-The eval's page on evals.darkmux.com names the approved commit, lists the
-criteria and shows which ones each run met. They are not listed in this file
-because this file is inside the model's sandbox.
-
 ## Run it with darkmux
 
 ```bash
@@ -88,8 +88,8 @@ access and what a bundle carries.
 ## What `eval/` holds
 
 `eval/` holds the darkmux workload (`eval/workloads/webhook-forgery.json`): the
-prompt and the rules that grade the result, each quoting the prompt sentence
-it checks, with the planted bugs. `eval/` is never copied into the model's
+prompt, the rules that grade the result (each quoting the prompt sentence it
+checks) and the planted bugs. `eval/` is never copied into the model's
 sandbox.
 
 ## License
